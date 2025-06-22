@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(OMPL_ReedsShepp_Demo)
 
-# set(OMPL_DIR "/usr/local/share/ompl/cmake")
-# set(CMAKE_PREFIX_PATH "${OMPL_DIR}" ${CMAKE_PREFIX_PATH})
-
-message(INFO ${CMAKE_PREFIX_PATH})
-
 find_package(ompl REQUIRED)
 find_Package(RenderModule REQUIRED)
 

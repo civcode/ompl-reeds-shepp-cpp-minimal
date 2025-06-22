@@ -7,9 +7,10 @@ namespace ob = ompl::base;
 int main()
 {
     auto space(std::make_shared<ob::ReedsSheppStateSpace>(1.0));
-    ob::RealVectorBounds bounds(2);
-    bounds.setLow(-10); bounds.setHigh(10);
-    space->setBounds(bounds);
+    /* bound are NOT required for Reeds-Shepp solutiong */
+    // ob::RealVectorBounds bounds(2);
+    // bounds.setLow(-10); bounds.setHigh(10);
+    // space->setBounds(bounds);
 
     ob::ScopedState<> start(space);
     start[0] = 0.0; start[1] = 0.0; start[2] = 0.0;
