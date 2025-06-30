@@ -7,14 +7,36 @@
 
 namespace ob = ompl::base;
 
+class MyReedsShepp : public ob::ReedsSheppStateSpace {
+public:
+    using ob::ReedsSheppStateSpace::ReedsSheppStateSpace;
+    /* Wrapper for interpolate */
+    void interpolate(const ob::State *from, const ob::State *to, double t, ob::State *state) const {
+        ReedsSheppStateSpace::interpolate(from, to, t, state);
+    }
+    /* Wrapper for interpolate using ob::ReedsSheppStateSpace::ReedsSheppPath */
+    void interpolate(const ob::State *from, const ob::ReedsSheppStateSpace::ReedsSheppPath &path, double t, ob::State *state) const {
+        ReedsSheppStateSpace::interpolate(from, path, t, state);
+    }
+    /* Wrapper for setTurningRadius using ob::ReedsSheppStateSpace::setTurningRadius */
+    void setTurningRadius(double rho) {
+        rho_ = rho;
+    }
+    double getTurningRadius() const {
+        return rho_;
+    }
+};
+
 int main()
 {
-    auto space(std::make_shared<ob::ReedsSheppStateSpace>(4.0));
+    float turning_radius = 4.0;
+    // auto space(std::make_shared<ob::ReedsSheppStateSpace>(4.0));
+    auto space = std::make_shared<MyReedsShepp>(turning_radius);
     /* bound are NOT required for Reeds-Shepp solutiong */
     // ob::RealVectorBounds bounds(2);
     // bounds.setLow(-10); bounds.setHigh(10);
     // space->setBounds(bounds);
-    
+     
 
     ob::ScopedState<> start(space);
     start[0] = 0.0; start[1] = 0.0; start[2] = 0.0;
@@ -83,6 +105,7 @@ int main()
     };
 
     RenderModule::Init(980, 720, 1.0);
+    RenderModule::EnableRootWindowDocking();
     RenderModule::RegisterImGuiCallback([&]() {
         // create radio-buttons for goal orientation
         ImGui::Begin("Goal Orientation");
@@ -95,6 +118,13 @@ int main()
         ImGui::RadioButton("180 degrees", &yaw_deg, 180.0);
         ImGui::RadioButton("270 degrees", &yaw_deg, 270.0);
         goal[2] = yaw_deg * M_PI / 180.0;  
+        // if (ImGui::SliderFloat("Turning Radius", &turning_radius, 1.0f, 10.0f, "%.1f m")) {
+        //     float step = 1.0f;
+        //     turning_radius = std::round(turning_radius / step) * step;
+        // }
+        ImGui::SliderFloat("Turning Radius", &turning_radius, 1.0f, 10.0f, "%.1f m");
+        // ImGui::DragFloat("Turning Radius", &turning_radius, 1.0f, 1.0f, 10.0f, "%.1f m");
+        space->setTurningRadius(turning_radius);
         ImGui::End();
         
         ImGui::Begin("Line Plot");
