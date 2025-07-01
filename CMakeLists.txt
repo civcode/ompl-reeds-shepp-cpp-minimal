@@ -4,7 +4,10 @@ project(OMPL_ReedsShepp_Demo)
 find_package(ompl REQUIRED)
 find_Package(RenderModule REQUIRED)
 
-include_directories(${OMPL_INCLUDE_DIRS})
+include_directories(
+    ${CMAKE_SOURCE_DIR}/include    
+    ${OMPL_INCLUDE_DIRS}
+)
 
 add_executable(distance src/main_distance.cpp)
 target_link_libraries(distance PUBLIC ompl::ompl RenderModule::RenderModule)

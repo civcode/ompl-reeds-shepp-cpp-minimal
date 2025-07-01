@@ -1,24 +1,9 @@
-#include <ompl/base/spaces/ReedsSheppStateSpace.h>
-#include <ompl/base/ScopedState.h>
 #include <iostream>
 
-namespace ob = ompl::base;
-
-class MyReedsShepp : public ob::ReedsSheppStateSpace {
-public:
-    using ob::ReedsSheppStateSpace::ReedsSheppStateSpace;
-    /* Wrapper for interpolate using ob::ReedsSheppStateSpace::ReedsSheppPath */
-    void interpolate(const ob::State *from, const ob::ReedsSheppStateSpace::ReedsSheppPath &path, double t, ob::State *state) const {
-        ReedsSheppStateSpace::interpolate(from, path, t, state);
-    }
-    /* Wrapper for setTurningRadius using ob::ReedsSheppStateSpace::setTurningRadius */
-    void setTurningRadius(double rho) {
-        rho_ = rho;
-    }
-};
+#include "reeds_shepp/reeds_shepp_wrapper.hpp"
 
 int main() {
-    auto space = std::make_shared<MyReedsShepp>(1.0);
+    auto space = std::make_shared<ReedsSheppWrapper>(1.0);
     /* bound are NOT required for Reeds-Shepp solutiong */
     // auto space = std::make_shared<ob::ReedsSheppStateSpace>(1.0);
     // ob::RealVectorBounds bounds(2);
@@ -37,14 +22,14 @@ int main() {
 
     /* Interpolate path poses using */
     std::vector<ob::State*> path_states;
-    int path_length = 50;
+    int path_length = 20;
     for (int i = 0; i <= path_length; ++i) {
         double t = static_cast<double>(i) / path_length;
         ob::State *s = space->allocState();
         space->interpolate(start.get(), path, t, s);
         path_states.push_back(s);
     }
-    std::cout << "path.size() = " << path_states.size() << std::endl;
+    std::cout << "path.size() = " << path_states.size() << " elements" << std::endl;
 
     /* Get path segments and driving direction */
     double distance = 0;

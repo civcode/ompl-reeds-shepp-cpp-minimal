@@ -1,37 +1,14 @@
-#include <ompl/base/spaces/ReedsSheppStateSpace.h>
-#include <ompl/base/ScopedState.h>
 #include <iostream>
 #include <vector>
 
+#include "reeds_shepp/reeds_shepp_wrapper.hpp"
 #include "render_module/render_module.hpp" 
-
-namespace ob = ompl::base;
-
-class MyReedsShepp : public ob::ReedsSheppStateSpace {
-public:
-    using ob::ReedsSheppStateSpace::ReedsSheppStateSpace;
-    /* Wrapper for interpolate */
-    void interpolate(const ob::State *from, const ob::State *to, double t, ob::State *state) const {
-        ReedsSheppStateSpace::interpolate(from, to, t, state);
-    }
-    /* Wrapper for interpolate using ob::ReedsSheppStateSpace::ReedsSheppPath */
-    void interpolate(const ob::State *from, const ob::ReedsSheppStateSpace::ReedsSheppPath &path, double t, ob::State *state) const {
-        ReedsSheppStateSpace::interpolate(from, path, t, state);
-    }
-    /* Wrapper for setTurningRadius using ob::ReedsSheppStateSpace::setTurningRadius */
-    void setTurningRadius(double rho) {
-        rho_ = rho;
-    }
-    double getTurningRadius() const {
-        return rho_;
-    }
-};
 
 int main()
 {
     float turning_radius = 4.0;
     // auto space(std::make_shared<ob::ReedsSheppStateSpace>(4.0));
-    auto space = std::make_shared<MyReedsShepp>(turning_radius);
+    auto space = std::make_shared<ReedsSheppWrapper>(turning_radius);
     /* bound are NOT required for Reeds-Shepp solutiong */
     // ob::RealVectorBounds bounds(2);
     // bounds.setLow(-10); bounds.setHigh(10);
@@ -46,29 +23,6 @@ int main()
     goal[0] = 0.0; goal[1] = 3.0; goal[2] = M_PI/2;
     double goal_yaw = goal[2];
     
-
-    std::vector<ob::State*> path;
-    int path_length = 50;
-    for (int i = 0; i <= path_length; ++i) {
-        double t = static_cast<double>(i) / path_length;
-        ob::State *s = space->allocState();
-        space->interpolate(start.get(), goal.get(), t, s);
-        path.push_back(s);
-    }
-    std::cout << "path.size() = " << path.size() << std::endl;
-
-    std::vector<double> x_pos;
-    std::vector<double> y_pos;
-    std::vector<double> yaw_pos;
-    for (size_t i = 0; i < path.size(); ++i)
-    {
-        auto* s = path[i]->as<ob::SE2StateSpace::StateType>();
-        std::cout << "Pose " << i << ": x=" << s->getX() << ", y=" << s->getY() << ", yaw=" << s->getYaw() << std::endl;
-        x_pos.push_back(s->getX());
-        y_pos.push_back(s->getY());
-        yaw_pos.push_back(s->getYaw());
-    }
-
     struct data {
         std::vector<double> x_pos;
         std::vector<double> y_pos;
@@ -79,6 +33,7 @@ int main()
         goal[0] = point.x;
         goal[1] = point.y;
 
+        /* Generate and interpolate Reeds-Shepp path */
         std::vector<ob::State*> path;
         int path_length = 50;
         for (int i = 0; i <= path_length; ++i) {
@@ -87,8 +42,9 @@ int main()
             space->interpolate(start.get(), goal.get(), t, s);
             path.push_back(s);
         }
-        // std::cout << "path.size() = " << path.size() << std::endl;
+        // std::cout << "path.size() = " << path.size() << " elements" << std::endl;
 
+        /* Copy data for plotting */
         std::vector<double> x_pos;
         std::vector<double> y_pos;
         std::vector<double> yaw_pos;
@@ -99,6 +55,11 @@ int main()
             x_pos.push_back(s->getX());
             y_pos.push_back(s->getY());
             yaw_pos.push_back(s->getYaw());
+        }
+
+        /* Free memory */
+        for (auto* s : path) {
+            space->freeState(s);
         }
 
         return {x_pos, y_pos, yaw_pos};
@@ -158,9 +119,8 @@ int main()
                 ImPlot::PlotScatter("Marker Goal", &marker_x, &marker_y, 1);
 
                 data path_data = get_path(mouse_pos);
-                x_pos = path_data.x_pos;
-                y_pos = path_data.y_pos;
-                ImPlot::PlotLine("Position", x_pos.data(), y_pos.data(), x_pos.size());
+                ImPlot::PlotLine("Position", path_data.x_pos.data(), path_data.y_pos.data(), path_data.x_pos.size());
+
             }
             ImPlot::EndPlot();
         }
@@ -169,6 +129,5 @@ int main()
     RenderModule::Run();
     RenderModule::Shutdown(); 
 
-    for (auto* s : path) space->freeState(s);
     return 0;
 }
